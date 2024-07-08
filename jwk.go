@@ -30,6 +30,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 	"net/url"
 	"reflect"
@@ -318,10 +319,15 @@ func (k *JSONWebKey) UnmarshalJSON(data []byte) (err error) {
 	x5tSHA1Len := len(k.CertificateThumbprintSHA1)
 	x5tSHA256Len := len(k.CertificateThumbprintSHA256)
 	if x5tSHA1Len > 0 && x5tSHA1Len != sha1.Size {
+		log.Println(fmt.Sprintf("go-jose/go-jose: invalid JWK, x5t header is of incorrect size. got %d bytes expected %d",
+			x5tSHA1Len, sha1.Size))
 		k.CertificateThumbprintSHA1 = []byte{}
 		//return errors.New("go-jose/go-jose: invalid JWK, x5t header is of incorrect size")
 	}
 	if x5tSHA256Len > 0 && x5tSHA256Len != sha256.Size {
+		log.Println(fmt.Sprintf(
+			"go-jose/go-jose: invalid JWK, x5t#S256 header is of incorrect size. got %d bytes expected %d",
+			x5tSHA256Len, sha256.Size))
 		k.CertificateThumbprintSHA256 = []byte{}
 		//return errors.New("go-jose/go-jose: invalid JWK, x5t#S256 header is of incorrect size")
 	}
@@ -379,11 +385,7 @@ func (s *JSONWebKeySet) UnmarshalJSON(data []byte) (err error) {
 		var k JSONWebKey
 		err = json.Unmarshal(rk, &k)
 		if err != nil {
-			// Skip key and continue unmarshalling the key set if key unmarshal
-			// failed because of unsupported key type or parameters.
-			if !errors.Is(err, errUnsupportedJWK) {
-				return err
-			}
+			log.Println("skipping json web key due to unmarshal error: ", err)
 		} else {
 			s.Keys = append(s.Keys, k)
 		}
